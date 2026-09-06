@@ -2,12 +2,19 @@ const KEY = "meu_acervo_itens_v1";
 const defaultCategories = ["Documentos pessoais","Saúde","Família","Trabalho","Estudos","Financeiro","Imóveis","Veículos","Fotografias","Outros"];
 let items = JSON.parse(localStorage.getItem(KEY) || "[]");
 let currentView = "inicio";
-let currentGroup = ""; // Variável para controlar o agrupamento atual
+let currentGroup = ""; 
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 
-function save() { localStorage.setItem(KEY, JSON.stringify(items)); updateCount(); }
+function save() { 
+  try {
+    localStorage.setItem(KEY, JSON.stringify(items)); 
+    updateCount(); 
+  } catch (e) {
+    alert("Erro ao salvar: O limite de armazenamento do navegador (aprox. 5MB) pode ter sido atingido por causa dos arquivos salvos.");
+  }
+}
 function updateCount() { $("storageCount").textContent = `${items.length} ${items.length === 1 ? "item" : "itens"}`; }
 function formatDate(v) { if(!v) return "—"; return new Date(v + "T00:00:00").toLocaleDateString("pt-BR"); }
 function categoryOptions(selected = "") { return defaultCategories.map(c => `<option ${c === selected ? "selected" : ""}>${c}</option>`).join(""); }
@@ -30,7 +37,6 @@ function render(view = currentView, query = "") {
 
 function renderHome() {
   const counts = { doc: items.filter(i => i.type === "Documento").length, photo: items.filter(i => i.type === "Fotografia").length, people: new Set(items.map(i => i.person).filter(Boolean)).size };
-  
   $("appContent").innerHTML = `
     <div class="hero"><div><h1>Painel de Controle</h1><p>Visão geral e estatísticas do acervo.</p></div></div>
     <div class="stats">
@@ -44,7 +50,6 @@ function renderHome() {
   `;
 }
 
-// Gera o HTML interno das linhas da tabela
 function getRowsHtml(list) {
   return list.map(i => `
   <div class="row">
@@ -62,22 +67,18 @@ function getRowsHtml(list) {
   </div>`).join("");
 }
 
-// Renderiza a Tabela com Suporte a Agrupamento
 function itemTable(list) {
   if(!list.length) return `<div class="table"><div class="empty">Nenhum registro encontrado.</div></div>`;
   
-  let html = `<div class="table">
-    <div class="row header"><div>Título do Documento / Item</div><div>Tipo</div><div>Pessoa Relacionada</div><div>Data</div><div>Ações</div></div>`;
+  let html = `<div class="table"><div class="row header"><div>Título do Documento / Item</div><div>Tipo</div><div>Pessoa Relacionada</div><div>Data</div><div>Ações</div></div>`;
     
   if (currentGroup && currentView === "itens") {
-    // Agrupa o array de acordo com o filtro selecionado
     const groups = {};
     list.forEach(i => {
       let key = i[currentGroup] || "Não classificado/Informado";
       if (!groups[key]) groups[key] = [];
       groups[key].push(i);
     });
-    // Gera as linhas com cabeçalhos de grupo
     Object.keys(groups).sort().forEach(groupName => {
       html += `<div class="row group-header">🗂️ ${esc(groupName)} (${groups[groupName].length} registro(s))</div>`;
       html += getRowsHtml(groups[groupName]);
@@ -106,15 +107,12 @@ function renderItems(list = items, q = "") {
     </div>
     ${itemTable(list)}
   `;
-  
-  // Ao alterar o agrupamento, re-renderiza a view
   $("groupSelect").addEventListener("change", e => {
     currentGroup = e.target.value;
     renderItems(list, q);
   });
 }
 
-/* Telas Secundárias */
 function renderPeople() {
   const people = [...new Set(items.map(i => i.person).filter(Boolean))];
   $("appContent").innerHTML = `<div class="hero"><div><h1>Pessoas Relacionadas</h1><p>Índice de pessoas vinculadas aos registros.</p></div></div><div class="cards">${people.length ? people.map(p => `<div class="person-card" onclick="currentGroup='person'; $('globalSearch').value='${esc(p)}'; render('itens', '${esc(p)}');"><b>${esc(p)}</b><div class="muted">${items.filter(i => i.person === p).length} registro(s)</div></div>`).join("") : `<div class="empty" style="grid-column: 1 / -1; border: 1px solid #ccc;">Nenhuma pessoa cadastrada.</div>`}</div>`;
@@ -133,7 +131,6 @@ function renderConfig() {
   $("appContent").innerHTML = `<div class="hero"><div><h1>Configurações do Sistema</h1><p>Parâmetros de execução e backup.</p></div></div><div class="table" style="padding: 20px;"><p style="font-weight:bold;">Gerenciamento de Dados Locais</p><button class="primary" onclick="exportData()">Exportar Banco de Dados (JSON)</button> <button class="secondary" style="color:darkred;" onclick="clearData()">Apagar Tudo</button></div>`;
 }
 
-/* ---- LÓGICA DO MODAL DE EDIÇÃO E CADASTRO ---- */
 function openModal(item = null) {
   $("itemModal").classList.remove("hidden"); 
   $("modalTitle").textContent = item ? "Editar Registro" : "Adicionar ao Acervo";
@@ -157,21 +154,45 @@ $("openAdd").onclick = () => openModal();
 $("closeModal").onclick = closeModal; 
 $("cancelModal").onclick = closeModal;
 
+/* NOVA LÓGICA DE SALVAMENTO COM CONVERSÃO DE ARQUIVO (BASE64) */
 $("itemForm").onsubmit = e => {
   e.preventDefault(); 
   const id = $("itemId").value || crypto.randomUUID(); 
   const old = items.find(i => i.id === id); 
   const f = $("file").files[0]; 
-  const item = {
-    id, title: $("title").value.trim(), type: $("type").value, person: $("person").value.trim(), category: $("category").value, date: $("date").value, place: $("place").value.trim(), physical: $("physical").value.trim(), keywords: $("keywords").value.trim(), description: $("description").value.trim(), notes: $("notes").value.trim(), fileName: f?.name || old?.fileName || ""
-  }; 
-  
-  if(old) items = items.map(i => i.id === id ? item : i);
-  else items.push(item); 
-  
-  save(); 
-  closeModal(); 
-  render(currentView, $("globalSearch").value);
+
+  const finalizarSalvamento = (fileData, fileName) => {
+    const item = {
+      id, 
+      title: $("title").value.trim(), 
+      type: $("type").value, 
+      person: $("person").value.trim(), 
+      category: $("category").value, 
+      date: $("date").value, 
+      place: $("place").value.trim(), 
+      physical: $("physical").value.trim(), 
+      keywords: $("keywords").value.trim(), 
+      description: $("description").value.trim(), 
+      notes: $("notes").value.trim(), 
+      fileName: fileName,
+      fileData: fileData 
+    }; 
+    
+    if(old) items = items.map(i => i.id === id ? item : i);
+    else items.push(item); 
+    
+    save(); 
+    closeModal(); 
+    render(currentView, $("globalSearch").value);
+  };
+
+  if (f) {
+    const reader = new FileReader();
+    reader.onload = event => finalizarSalvamento(event.target.result, f.name);
+    reader.readAsDataURL(f);
+  } else {
+    finalizarSalvamento(old?.fileData || "", old?.fileName || "");
+  }
 };
 
 window.editItem = id => openModal(items.find(i => i.id === id));
@@ -182,12 +203,33 @@ window.deleteItem = id => {
   }
 };
 
-/* ---- LÓGICA DE VISUALIZAÇÃO E PDF (FICHA DO ITEM) ---- */
+/* NOVA LÓGICA DE VISUALIZAÇÃO COM PDF E IMAGENS */
 window.viewItem = id => {
   const item = items.find(i => i.id === id);
   if(!item) return;
 
-  // Monta a estrutura da Ficha de Arquivamento (estilo documento SEI)
+  let visualizadorArquivoHTML = "";
+
+  if (item.fileData) {
+    const ehPDF = item.fileName.toLowerCase().endsWith('.pdf') || item.fileData.startsWith('data:application/pdf');
+    
+    if (ehPDF) {
+      visualizadorArquivoHTML = `
+        <div style="margin-top:20px; border-top:2px solid #000; padding-top:15px;">
+          <span style="font-weight:bold; font-size:12px; text-transform:uppercase; display:block; margin-bottom:10px;">Visualização do Documento (PDF)</span>
+          <iframe src="${item.fileData}" width="100%" height="600px" style="border:1px solid #ccc; background:#ebebeb;"></iframe>
+        </div>
+      `;
+    } else if (item.fileData.startsWith('data:image')) {
+      visualizadorArquivoHTML = `
+        <div style="margin-top:20px; text-align:center; border-top:2px solid #000; padding-top:15px;">
+          <span style="font-weight:bold; font-size:12px; text-transform:uppercase; display:block; margin-bottom:10px;">Visualização da Imagem</span>
+          <img src="${item.fileData}" style="max-width:100%; max-height:600px; border:1px solid #ccc; padding:5px; background:#fff;">
+        </div>
+      `;
+    }
+  }
+
   const fichaHTML = `
     <div class="a4-header">
       <div class="a4-title">Ficha de Registro Documental</div>
@@ -196,20 +238,17 @@ window.viewItem = id => {
     
     <div class="a4-grid">
       <div class="a4-field a4-full"><span>Título do Registro / Assunto</span>${esc(item.title)}</div>
-      
       <div class="a4-field"><span>Tipo Documental</span>${esc(item.type)}</div>
       <div class="a4-field"><span>Pessoa Relacionada / Interessado</span>${esc(item.person || "Não informado")}</div>
-      
       <div class="a4-field"><span>Categoria de Arquivamento</span>${esc(item.category)}</div>
       <div class="a4-field"><span>Data do Fato / Documento</span>${formatDate(item.date)}</div>
-      
       <div class="a4-field"><span>Local de Origem</span>${esc(item.place || "Não informado")}</div>
       <div class="a4-field"><span>Localização Física Atual</span><b>${esc(item.physical || "Acervo Digital / Não informado")}</b></div>
-      
       <div class="a4-field a4-full"><span>Palavras-Chave (Tags)</span>${esc(item.keywords || "—")}</div>
-      
       <div class="a4-field a4-full"><span>Nome do Arquivo Digital Vinculado</span>${esc(item.fileName || "Nenhum arquivo digital cadastrado.")}</div>
     </div>
+    
+    ${visualizadorArquivoHTML}
     
     ${item.description ? `
     <div style="margin-top:20px; border-top:2px solid #000; padding-top:15px;">
@@ -228,22 +267,14 @@ window.viewItem = id => {
     </div>
   `;
 
-  // Insere a ficha tanto no Modal de visualização quanto na área oculta de impressão
   $("viewContent").innerHTML = fichaHTML;
   $("printArea").innerHTML = `<div class="a4-sheet" style="border:none; box-shadow:none;">${fichaHTML}</div>`;
-  
-  // Abre o modal
   $("viewModal").classList.remove("hidden");
 };
 
-// Fechar Visualização
 $("closeViewModal").onclick = () => { $("viewModal").classList.add("hidden"); };
 $("viewModal").addEventListener("click", e => { if (e.target.id === "viewModal") $("viewModal").classList.add("hidden"); });
-
-// Acionar a Impressão / Salvar PDF do Navegador
-$("printBtn").onclick = () => {
-  window.print();
-};
+$("printBtn").onclick = () => { window.print(); };
 
 function exportData() { const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "backup_meu_acervo.json"; a.click(); URL.revokeObjectURL(a.href); }
 function clearData() { if (confirm("ATENÇÃO: Apagar todos os registros do navegador?")) { items = []; save(); render("inicio"); } }
