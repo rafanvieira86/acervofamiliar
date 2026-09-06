@@ -2,7 +2,6 @@
 body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #ffffff; color: #333; font-size: 12px; }
 .app { display: flex; min-height: 100vh; }
 
-/* Barra Lateral Estilo Sistema Institucional */
 .sidebar { width: 220px; background: #f0f4f7; border-right: 1px solid #cccccc; display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; }
 .brand { background: #336699; color: #fff; padding: 15px; text-align: center; border-bottom: 3px solid #f99d1c; }
 .brand strong { display: block; font-size: 15px; text-transform: uppercase; font-weight: bold; }
@@ -16,27 +15,23 @@ nav { padding: 10px 0; }
 .storage { padding: 10px 15px; font-size: 11px; color: #555; background: #e9ecef; }
 .storage b { font-size: 12px; color: #333; display: block; margin-top: 4px; }
 
-/* Área Principal */
 .main { margin-left: 220px; width: calc(100% - 220px); background: #ffffff; }
 .topbar { height: 50px; background: #e6e6e6; border-bottom: 1px solid #cccccc; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; position: sticky; top: 0; z-index: 5;}
 .mobile-title { display: none; }
 .search input { border: 1px solid #aaa; padding: 4px 8px; font-size: 12px; width: 350px; }
 .content { padding: 20px; }
 
-/* Cabeçalhos e Filtros */
 .hero { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; }
 .hero h1 { font-size: 16px; color: #336699; margin: 0 0 5px 0; }
 .hero p { font-size: 11px; color: #666; margin: 0; }
 .filter-bar { background: #f9f9f9; padding: 10px; border: 1px solid #ddd; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
 .section-head h2 { font-size: 14px; color: #336699; margin: 25px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
 
-/* Botões */
 .primary, .secondary { border: 1px solid #888; background: #f5f5f5; color: #333; padding: 5px 12px; font-size: 12px; cursor: pointer; }
 .primary:hover, .secondary:hover { background: #e8e8e8; border-color: #555; }
 .primary { background-color: #336699; color: white; border-color: #224466; font-weight: bold; }
 .primary:hover { background-color: #224466; }
 
-/* Tabelas e Agrupamentos */
 .table { width: 100%; border-collapse: collapse; border: 1px solid #cccccc; background: #fff; }
 .row { display: grid; grid-template-columns: 2.5fr 1fr 1.5fr 1fr 80px; align-items: center; padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 12px; }
 .row:nth-child(even) { background-color: #f9f9f9; }
@@ -46,7 +41,6 @@ nav { padding: 10px 0; }
 .row b { color: #0000ee; text-decoration: underline; cursor: pointer; font-size: 12px; }
 .empty { padding: 30px; text-align: center; color: #666; font-style: italic; }
 
-/* Cards */
 .stats { display: flex; gap: 10px; margin-bottom: 20px; }
 .stat { border: 1px solid #ccc; padding: 10px; flex: 1; background: #f9f9f9; text-align: center; }
 .stat b { font-size: 18px; display: block; color: #336699; }
@@ -57,7 +51,6 @@ nav { padding: 10px 0; }
 .category-card b, .person-card b { font-size: 12px; color: #336699; text-decoration: underline; display: block;}
 .muted { color: #555; font-size: 10px; margin-top: 5px; }
 
-/* Modais e Formulários */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: grid; place-items: center; z-index: 20; }
 .hidden { display: none; }
 .modal-card { background: #fff; border: 1px solid #999; width: 650px; box-shadow: 2px 2px 10px rgba(0,0,0,0.3); border-radius: 0; }
@@ -71,10 +64,8 @@ input:focus, select:focus, textarea:focus { border-color: #336699; background: #
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 10px; }
 .filebox { border: 1px solid #ccc; background: #f5f5f5; padding: 10px; margin: 10px 0; }
 
-/* Ficha A4 para Visualização */
 .a4-sheet { background: #fff; padding: 40px; box-shadow: 0 0 5px rgba(0,0,0,0.1); font-family: 'Times New Roman', Times, serif; color: #000; min-height: 500px; }
 .a4-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
-.a4-header img { width: 60px; margin-bottom: 10px; }
 .a4-title { font-size: 18px; font-weight: bold; text-transform: uppercase; }
 .a4-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 14px; }
 .a4-field { border-bottom: 1px dotted #ccc; padding-bottom: 5px; }
@@ -82,16 +73,15 @@ input:focus, select:focus, textarea:focus { border-color: #336699; background: #
 .a4-full { grid-column: 1 / -1; }
 .a4-content-box { border: 1px solid #000; padding: 15px; background: #fafafa; margin-top: 20px; font-size: 14px; white-space: pre-wrap; }
 
-/* --- REGRAS DE IMPRESSÃO E PDF NATIVO --- */
 #printArea { display: none; }
 @media print {
   body { background: #fff; }
   .app, .modal, .modal-card, .topbar, .sidebar { display: none !important; }
   #printArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
   .a4-sheet { box-shadow: none; padding: 0; width: 100%; border: none; }
+  iframe { border: none !important; }
 }
 
-/* Responsividade Básica */
 @media(max-width:900px){
   .sidebar { width: 180px; }
   .main { margin-left: 180px; width: calc(100% - 180px); }
