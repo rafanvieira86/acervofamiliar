@@ -2,6 +2,7 @@ const KEY = "meu_acervo_itens_v1";
 const defaultCategories = ["Documentos pessoais","Saúde","Família","Trabalho","Estudos","Financeiro","Imóveis","Veículos","Fotografias","Outros"];
 let items = JSON.parse(localStorage.getItem(KEY) || "[]");
 let currentView = "inicio";
+let currentGroup = ""; // Variável para controlar o agrupamento atual
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,103 +29,114 @@ function render(view = currentView, query = "") {
 }
 
 function renderHome() {
-  const counts = { doc: items.filter(i => i.type === "Documento").length, photo: items.filter(i => i.type === "Fotografia").length, people: new Set(items.map(i => i.person).filter(Boolean)).size, cats: new Set(items.map(i => i.category).filter(Boolean)).size };
+  const counts = { doc: items.filter(i => i.type === "Documento").length, photo: items.filter(i => i.type === "Fotografia").length, people: new Set(items.map(i => i.person).filter(Boolean)).size };
   
   $("appContent").innerHTML = `
-    <div class="hero">
-      <h1>Painel de Controle</h1>
-      <p>Visão geral e estatísticas do acervo.</p>
-    </div>
+    <div class="hero"><div><h1>Painel de Controle</h1><p>Visão geral e estatísticas do acervo.</p></div></div>
     <div class="stats">
       <div class="stat"><b>${items.length}</b><span>Itens Cadastrados</span></div>
       <div class="stat"><b>${counts.doc}</b><span>Documentos</span></div>
       <div class="stat"><b>${counts.photo}</b><span>Fotografias</span></div>
-      <div class="stat"><b>${counts.people}</b><span>Interessados</span></div>
+      <div class="stat"><b>${counts.people}</b><span>Pessoas (Interessados)</span></div>
     </div>
-    <div class="section-head"><h2>Acesso Rápido - Categorias</h2></div>
-    <div class="cards">
-      ${defaultCategories.slice(0,8).map(c => `<div class="category-card" data-cat="${esc(c)}"><b>${esc(c)}</b><div class="muted">${items.filter(i => i.category === c).length} registro(s)</div></div>`).join("")}
-    </div>
-    <div class="section-head">
-      <h2>Registros Recentes</h2>
-      <button class="secondary" id="seeAll" style="float:right; margin-top:-35px;">Ver todo o acervo</button>
-    </div>
+    <div class="section-head"><h2>Registros Recentes</h2></div>
     ${itemTable(items.slice().reverse().slice(0, 6))}
   `;
-  
-  document.querySelectorAll(".category-card").forEach(c => c.onclick = () => { render("itens"); setTimeout(() => { $("globalSearch").value = c.dataset.cat; render("itens", c.dataset.cat); }, 0); });
-  $("seeAll")?.addEventListener("click", () => render("itens"));
 }
 
-/* Nova Tabela Padrão (Alta Densidade) */
-function itemTable(list) {
-  if(!list.length) return `<div class="table"><div class="empty">Nenhum registro encontrado no acervo.</div></div>`;
-  
-  return `<div class="table">
-    <div class="row header">
-      <div>Título do Documento / Item</div>
-      <div>Tipo</div>
-      <div>Pessoa Relacionada</div>
-      <div>Data</div>
-      <div>Ações</div>
+// Gera o HTML interno das linhas da tabela
+function getRowsHtml(list) {
+  return list.map(i => `
+  <div class="row">
+    <div>
+      <b onclick="viewItem('${i.id}')" title="Visualizar Documento / Imprimir Ficha">📄 ${esc(i.title)}</b><br>
+      <span style="color:#555; font-size:10px">Cat: ${esc(i.category || "Sem categoria")} | Loc: ${esc(i.physical || "Não informado")}</span>
     </div>
-    ${list.map(i => `
-    <div class="row">
-      <div>
-        <b onclick="editItem('${i.id}')" title="Consultar detalhes">${esc(i.title)}</b><br>
-        <span style="color:#555; font-size:10px">Cat: ${esc(i.category || "Sem categoria")} | Loc: ${esc(i.physical || "Não informado")}</span>
-      </div>
-      <div>${esc(i.type)}</div>
-      <div>${esc(i.person || "—")}</div>
-      <div>${formatDate(i.date)}</div>
-      <div class="actions">
-        <button title="Consultar/Editar" onclick="editItem('${i.id}')" style="cursor:pointer; background:none; border:none; font-size:14px;">📄</button>
-        <button title="Excluir" onclick="deleteItem('${i.id}')" style="cursor:pointer; background:none; border:none; color:darkred; font-size:14px;">❌</button>
-      </div>
-    </div>`).join("")}
-  </div>`;
+    <div>${esc(i.type)}</div>
+    <div>${esc(i.person || "—")}</div>
+    <div>${formatDate(i.date)}</div>
+    <div class="actions">
+      <button title="Editar todos os dados" onclick="editItem('${i.id}')" style="cursor:pointer; background:none; border:none; font-size:14px;">✎</button>
+      <button title="Excluir" onclick="deleteItem('${i.id}')" style="cursor:pointer; background:none; border:none; color:darkred; font-size:14px;">❌</button>
+    </div>
+  </div>`).join("");
+}
+
+// Renderiza a Tabela com Suporte a Agrupamento
+function itemTable(list) {
+  if(!list.length) return `<div class="table"><div class="empty">Nenhum registro encontrado.</div></div>`;
+  
+  let html = `<div class="table">
+    <div class="row header"><div>Título do Documento / Item</div><div>Tipo</div><div>Pessoa Relacionada</div><div>Data</div><div>Ações</div></div>`;
+    
+  if (currentGroup && currentView === "itens") {
+    // Agrupa o array de acordo com o filtro selecionado
+    const groups = {};
+    list.forEach(i => {
+      let key = i[currentGroup] || "Não classificado/Informado";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(i);
+    });
+    // Gera as linhas com cabeçalhos de grupo
+    Object.keys(groups).sort().forEach(groupName => {
+      html += `<div class="row group-header">🗂️ ${esc(groupName)} (${groups[groupName].length} registro(s))</div>`;
+      html += getRowsHtml(groups[groupName]);
+    });
+  } else {
+    html += getRowsHtml(list);
+  }
+  
+  html += `</div>`;
+  return html;
 }
 
 function renderItems(list = items, q = "") {
-  $("appContent").innerHTML = `<div class="hero"><h1>Consulta ao Acervo</h1><p>${q ? `Resultados da pesquisa para: "${esc(q)}"` : "Listagem completa de itens registrados no sistema."}</p></div>${itemTable(list)}`;
+  $("appContent").innerHTML = `
+    <div class="hero" style="border:none; padding:0; margin:0;">
+      <div><h1>Consulta ao Acervo</h1><p>${q ? `Pesquisando por: "${esc(q)}"` : "Listagem de documentos, fotos e registros."}</p></div>
+    </div>
+    <div class="filter-bar">
+      <b>Agrupar acervo por:</b>
+      <select id="groupSelect" style="width:200px;">
+        <option value="">Lista Geral (Sem Agrupamento)</option>
+        <option value="person" ${currentGroup === "person" ? "selected" : ""}>Pessoa</option>
+        <option value="category" ${currentGroup === "category" ? "selected" : ""}>Categoria (Assunto)</option>
+        <option value="type" ${currentGroup === "type" ? "selected" : ""}>Tipo de Documento</option>
+      </select>
+    </div>
+    ${itemTable(list)}
+  `;
+  
+  // Ao alterar o agrupamento, re-renderiza a view
+  $("groupSelect").addEventListener("change", e => {
+    currentGroup = e.target.value;
+    renderItems(list, q);
+  });
 }
 
+/* Telas Secundárias */
 function renderPeople() {
   const people = [...new Set(items.map(i => i.person).filter(Boolean))];
-  $("appContent").innerHTML = `<div class="hero"><h1>Pessoas Relacionadas</h1><p>Índice de pessoas vinculadas aos registros do acervo.</p></div>
-  <div class="cards">
-    ${people.length ? people.map(p => `<div class="person-card"><b>${esc(p)}</b><div class="muted">${items.filter(i => i.person === p).length} registro(s)</div></div>`).join("") : `<div class="empty" style="grid-column: 1 / -1; border: 1px solid #ccc;">Nenhuma pessoa cadastrada no sistema.</div>`}
-  </div>`;
+  $("appContent").innerHTML = `<div class="hero"><div><h1>Pessoas Relacionadas</h1><p>Índice de pessoas vinculadas aos registros.</p></div></div><div class="cards">${people.length ? people.map(p => `<div class="person-card" onclick="currentGroup='person'; $('globalSearch').value='${esc(p)}'; render('itens', '${esc(p)}');"><b>${esc(p)}</b><div class="muted">${items.filter(i => i.person === p).length} registro(s)</div></div>`).join("") : `<div class="empty" style="grid-column: 1 / -1; border: 1px solid #ccc;">Nenhuma pessoa cadastrada.</div>`}</div>`;
 }
 
 function renderCategories() {
-  $("appContent").innerHTML = `<div class="hero"><h1>Categorias de Classificação</h1><p>Estrutura de tipologia documental e assuntos do acervo.</p></div>
-  <div class="cards">
-    ${defaultCategories.map(c => `<div class="category-card"><b>${esc(c)}</b><div class="muted">${items.filter(i => i.category === c).length} registro(s)</div></div>`).join("")}
-  </div>`;
+  $("appContent").innerHTML = `<div class="hero"><div><h1>Categorias de Classificação</h1><p>Estrutura de tipologia documental.</p></div></div><div class="cards">${defaultCategories.map(c => `<div class="category-card" onclick="currentGroup='category'; $('globalSearch').value='${esc(c)}'; render('itens', '${esc(c)}');"><b>${esc(c)}</b><div class="muted">${items.filter(i => i.category === c).length} registro(s)</div></div>`).join("")}</div>`;
 }
 
 function renderLocations() {
   const locs = [...new Set(items.map(i => i.physical).filter(Boolean))];
-  $("appContent").innerHTML = `<div class="hero"><h1>Localização Física</h1><p>Controle de armazenamento físico (caixas, pastas, estantes).</p></div>
-  <div class="table">
-    ${locs.length ? `<div class="row header" style="grid-template-columns: 3fr 1fr;"><div>Unidade de Arquivamento</div><div>Quantidade de Itens</div></div>
-    ${locs.map(l => `<div class="row" style="grid-template-columns: 3fr 1fr;"><div><b>${esc(l)}</b></div><div>${items.filter(i => i.physical === l).length}</div></div>`).join("")}` : `<div class="empty">Nenhuma localização física foi mapeada até o momento.</div>`}
-  </div>`;
+  $("appContent").innerHTML = `<div class="hero"><div><h1>Localização Física</h1><p>Controle de armazenamento físico.</p></div></div><div class="table">${locs.length ? `<div class="row header" style="grid-template-columns: 3fr 1fr;"><div>Unidade de Arquivamento</div><div>Quantidade</div></div>${locs.map(l => `<div class="row" style="grid-template-columns: 3fr 1fr;"><div><b>${esc(l)}</b></div><div>${items.filter(i => i.physical === l).length}</div></div>`).join("")}` : `<div class="empty">Nenhuma localização física foi mapeada.</div>`}</div>`;
 }
 
 function renderConfig() {
-  $("appContent").innerHTML = `<div class="hero"><h1>Configurações do Sistema</h1><p>Parâmetros de execução local do navegador.</p></div>
-  <div class="table" style="padding: 20px;">
-    <p style="margin-top:0; font-weight:bold;">Gerenciamento de Dados</p>
-    <p class="muted" style="margin-bottom: 20px;">Os dados estão armazenados localmente (` + items.length + ` registros processados). Utilize as opções abaixo para fazer backup de segurança.</p>
-    <button class="primary" onclick="exportData()">Exportar JSON</button> 
-    <button class="secondary" style="color:darkred; border-color:darkred;" onclick="clearData()">Limpar Banco de Dados</button>
-  </div>`;
+  $("appContent").innerHTML = `<div class="hero"><div><h1>Configurações do Sistema</h1><p>Parâmetros de execução e backup.</p></div></div><div class="table" style="padding: 20px;"><p style="font-weight:bold;">Gerenciamento de Dados Locais</p><button class="primary" onclick="exportData()">Exportar Banco de Dados (JSON)</button> <button class="secondary" style="color:darkred;" onclick="clearData()">Apagar Tudo</button></div>`;
 }
 
+/* ---- LÓGICA DO MODAL DE EDIÇÃO E CADASTRO ---- */
 function openModal(item = null) {
   $("itemModal").classList.remove("hidden"); 
+  $("modalTitle").textContent = item ? "Editar Registro" : "Adicionar ao Acervo";
   $("itemId").value = item?.id || ""; 
   $("title").value = item?.title || ""; 
   $("type").value = item?.type || "Documento"; 
@@ -137,15 +149,13 @@ function openModal(item = null) {
   $("description").value = item?.description || ""; 
   $("notes").value = item?.notes || ""; 
   $("file").value = ""; 
-  $("fileLabel").textContent = item?.fileName ? `(Arquivo registrado: ${item.fileName})` : "(Opcional — armazenado nesta versão no navegador)";
+  $("fileLabel").textContent = item?.fileName ? `(Arquivo vinculado: ${item.fileName})` : "(Opcional — armazenado no navegador)";
 }
 
 function closeModal() { $("itemModal").classList.add("hidden"); }
-
 $("openAdd").onclick = () => openModal(); 
 $("closeModal").onclick = closeModal; 
 $("cancelModal").onclick = closeModal;
-$("itemModal").addEventListener("click", e => { if (e.target.id === "itemModal") closeModal(); });
 
 $("itemForm").onsubmit = e => {
   e.preventDefault(); 
@@ -153,18 +163,7 @@ $("itemForm").onsubmit = e => {
   const old = items.find(i => i.id === id); 
   const f = $("file").files[0]; 
   const item = {
-    id,
-    title: $("title").value.trim(),
-    type: $("type").value,
-    person: $("person").value.trim(),
-    category: $("category").value,
-    date: $("date").value,
-    place: $("place").value.trim(),
-    physical: $("physical").value.trim(),
-    keywords: $("keywords").value.trim(),
-    description: $("description").value.trim(),
-    notes: $("notes").value.trim(),
-    fileName: f?.name || old?.fileName || ""
+    id, title: $("title").value.trim(), type: $("type").value, person: $("person").value.trim(), category: $("category").value, date: $("date").value, place: $("place").value.trim(), physical: $("physical").value.trim(), keywords: $("keywords").value.trim(), description: $("description").value.trim(), notes: $("notes").value.trim(), fileName: f?.name || old?.fileName || ""
   }; 
   
   if(old) items = items.map(i => i.id === id ? item : i);
@@ -179,27 +178,75 @@ window.editItem = id => openModal(items.find(i => i.id === id));
 window.deleteItem = id => {
   if (confirm("Confirma a exclusão permanente deste registro do acervo?")) {
     items = items.filter(i => i.id !== id);
-    save();
-    render(currentView, $("globalSearch").value);
+    save(); render(currentView, $("globalSearch").value);
   }
 };
 
-function exportData() {
-  const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "backup_meu_acervo.json";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+/* ---- LÓGICA DE VISUALIZAÇÃO E PDF (FICHA DO ITEM) ---- */
+window.viewItem = id => {
+  const item = items.find(i => i.id === id);
+  if(!item) return;
 
-function clearData() {
-  if (confirm("ATENÇÃO: Esta ação apagará todos os registros armazenados no navegador. Deseja prosseguir?")) {
-    items = [];
-    save();
-    render("inicio");
-  }
-}
+  // Monta a estrutura da Ficha de Arquivamento (estilo documento SEI)
+  const fichaHTML = `
+    <div class="a4-header">
+      <div class="a4-title">Ficha de Registro Documental</div>
+      <div style="font-size:12px; margin-top:5px; color:#555;">Acervo Pessoal e Familiar</div>
+    </div>
+    
+    <div class="a4-grid">
+      <div class="a4-field a4-full"><span>Título do Registro / Assunto</span>${esc(item.title)}</div>
+      
+      <div class="a4-field"><span>Tipo Documental</span>${esc(item.type)}</div>
+      <div class="a4-field"><span>Pessoa Relacionada / Interessado</span>${esc(item.person || "Não informado")}</div>
+      
+      <div class="a4-field"><span>Categoria de Arquivamento</span>${esc(item.category)}</div>
+      <div class="a4-field"><span>Data do Fato / Documento</span>${formatDate(item.date)}</div>
+      
+      <div class="a4-field"><span>Local de Origem</span>${esc(item.place || "Não informado")}</div>
+      <div class="a4-field"><span>Localização Física Atual</span><b>${esc(item.physical || "Acervo Digital / Não informado")}</b></div>
+      
+      <div class="a4-field a4-full"><span>Palavras-Chave (Tags)</span>${esc(item.keywords || "—")}</div>
+      
+      <div class="a4-field a4-full"><span>Nome do Arquivo Digital Vinculado</span>${esc(item.fileName || "Nenhum arquivo digital cadastrado.")}</div>
+    </div>
+    
+    ${item.description ? `
+    <div style="margin-top:20px; border-top:2px solid #000; padding-top:15px;">
+      <span style="font-weight:bold; font-size:12px; text-transform:uppercase;">Descrição / Teor do Documento</span>
+      <div class="a4-content-box">${esc(item.description)}</div>
+    </div>` : ''}
+
+    ${item.notes ? `
+    <div style="margin-top:20px;">
+      <span style="font-weight:bold; font-size:12px; text-transform:uppercase;">Observações Administrativas</span>
+      <div style="padding-top:10px; font-size:14px; font-style:italic;">${esc(item.notes)}</div>
+    </div>` : ''}
+    
+    <div style="margin-top: 50px; text-align: center; font-size:10px; color:#666;">
+      Documento gerado pelo sistema "Meu Acervo" • ID: ${item.id}
+    </div>
+  `;
+
+  // Insere a ficha tanto no Modal de visualização quanto na área oculta de impressão
+  $("viewContent").innerHTML = fichaHTML;
+  $("printArea").innerHTML = `<div class="a4-sheet" style="border:none; box-shadow:none;">${fichaHTML}</div>`;
+  
+  // Abre o modal
+  $("viewModal").classList.remove("hidden");
+};
+
+// Fechar Visualização
+$("closeViewModal").onclick = () => { $("viewModal").classList.add("hidden"); };
+$("viewModal").addEventListener("click", e => { if (e.target.id === "viewModal") $("viewModal").classList.add("hidden"); });
+
+// Acionar a Impressão / Salvar PDF do Navegador
+$("printBtn").onclick = () => {
+  window.print();
+};
+
+function exportData() { const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "backup_meu_acervo.json"; a.click(); URL.revokeObjectURL(a.href); }
+function clearData() { if (confirm("ATENÇÃO: Apagar todos os registros do navegador?")) { items = []; save(); render("inicio"); } }
 
 document.querySelectorAll(".nav-item").forEach(b => b.onclick = () => render(b.dataset.view, $("globalSearch").value = ""));
 $("globalSearch").addEventListener("input", e => { if (e.target.value) render("itens", e.target.value); else render(currentView); });
