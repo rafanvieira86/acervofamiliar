@@ -3,31 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meu Acervo — Acervo pessoal</title>
+  <title>Meu Acervo — Consulta e Registro</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">A</div><div><strong>Meu Acervo</strong><span>Acervo pessoal</span></div></div>
+      <div class="brand"><strong>Meu Acervo</strong><span>Acervo pessoal</span></div>
       <nav>
-        <button class="nav-item active" data-view="inicio">⌂ <span>Início</span></button>
-        <button class="nav-item" data-view="itens">▣ <span>Acervo</span></button>
-        <button class="nav-item" data-view="pessoas">♙ <span>Pessoas</span></button>
-        <button class="nav-item" data-view="categorias">▤ <span>Categorias</span></button>
-        <button class="nav-item" data-view="locais">⌂ <span>Localização física</span></button>
+        <button class="nav-item active" data-view="inicio">Início</button>
+        <button class="nav-item" data-view="itens">Acervo</button>
+        <button class="nav-item" data-view="pessoas">Pessoas</button>
+        <button class="nav-item" data-view="categorias">Categorias</button>
+        <button class="nav-item" data-view="locais">Localização física</button>
       </nav>
       <div class="sidebar-bottom">
-        <button class="nav-item" data-view="config">⚙ <span>Configurações</span></button>
-        <div class="storage"><span>Armazenamento local</span><b id="storageCount">0 itens</b></div>
+        <button class="nav-item" data-view="config">Configurações</button>
+        <div class="storage">Armazenamento local<br><b id="storageCount">0 itens</b></div>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div class="mobile-title">Meu Acervo</div>
-        <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Pesquisar no acervo por título, pessoa, categoria, data..." /></div>
-        <button class="primary" id="openAdd">＋ Adicionar ao acervo</button>
+        <div class="search"><input id="globalSearch" placeholder="Pesquisar no acervo por título, pessoa, categoria, data..." /></div>
+        <button class="primary" id="openAdd">Adicionar ao acervo</button>
       </header>
 
       <section id="appContent" class="content"></section>
@@ -36,7 +36,7 @@
 
   <div class="modal hidden" id="itemModal">
     <div class="modal-card">
-      <div class="modal-head"><div><h2 id="modalTitle">Adicionar ao acervo</h2><p>Registre o item e mantenha seu contexto.</p></div><button class="close" id="closeModal">×</button></div>
+      <div class="modal-head"><h2>Adicionar ao acervo</h2><button class="close" id="closeModal">×</button></div>
       <form id="itemForm">
         <input type="hidden" id="itemId">
         <div class="form-grid">
@@ -53,8 +53,16 @@
         </div>
         <label>Descrição<textarea id="description" rows="4" placeholder="Descreva o conteúdo, contexto ou importância do item."></textarea></label>
         <label>Observações<textarea id="notes" rows="3" placeholder="Observações adicionais"></textarea></label>
-        <div class="filebox"><span>📎</span><div><b>Arquivo digital</b><small id="fileLabel">Opcional — fica armazenado nesta versão no navegador.</small></div><input id="file" type="file"></div>
-        <div class="form-actions"><button type="button" class="secondary" id="cancelModal">Cancelar</button><button class="primary" type="submit">Salvar item</button></div>
+        
+        <div class="filebox">
+          <label>Arquivo digital <small id="fileLabel">(Opcional — armazenado nesta versão no navegador)</small></label>
+          <input id="file" type="file">
+        </div>
+        
+        <div class="form-actions" style="display:flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+          <button type="button" class="secondary" id="cancelModal">Cancelar</button>
+          <button class="primary" type="submit">Salvar item</button>
+        </div>
       </form>
     </div>
   </div>
