@@ -55,7 +55,7 @@
         <label>Observações<textarea id="notes" rows="3" placeholder="Observações adicionais"></textarea></label>
         <div class="filebox">
           <label>Arquivo digital <small id="fileLabel">(Opcional — armazenado nesta versão no navegador)</small></label>
-          <input id="file" type="file">
+          <input id="file" type="file" accept=".pdf, image/*">
         </div>
         <div class="form-actions" style="display:flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
           <button type="button" class="secondary" id="cancelModal">Cancelar</button>
@@ -83,7 +83,7 @@
     </div>
   </div>
 
-  <!-- Área oculta dedicada exclusivamente para impressão (PDF) -->
+  <!-- Área oculta dedicada exclusivamente para impressão -->
   <div id="printArea"></div>
 
   <script src="js/app.js"></script>
