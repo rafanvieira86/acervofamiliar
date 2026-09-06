@@ -23,43 +23,44 @@ nav { padding: 10px 0; }
 .search input { border: 1px solid #aaa; padding: 4px 8px; font-size: 12px; width: 350px; }
 .content { padding: 20px; }
 
-/* Cabeçalhos internos */
-.hero h1 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #336699; margin-top: 0; }
-.hero p { font-size: 11px; color: #666; margin-bottom: 20px; }
+/* Cabeçalhos e Filtros */
+.hero { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; }
+.hero h1 { font-size: 16px; color: #336699; margin: 0 0 5px 0; }
+.hero p { font-size: 11px; color: #666; margin: 0; }
+.filter-bar { background: #f9f9f9; padding: 10px; border: 1px solid #ddd; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
 .section-head h2 { font-size: 14px; color: #336699; margin: 25px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
 
-/* Botões Padrão Utilitário */
+/* Botões */
 .primary, .secondary { border: 1px solid #888; background: #f5f5f5; color: #333; padding: 5px 12px; font-size: 12px; cursor: pointer; }
 .primary:hover, .secondary:hover { background: #e8e8e8; border-color: #555; }
 .primary { background-color: #336699; color: white; border-color: #224466; font-weight: bold; }
 .primary:hover { background-color: #224466; }
 
-/* Tabelas e Linhas de Acervo */
+/* Tabelas e Agrupamentos */
 .table { width: 100%; border-collapse: collapse; border: 1px solid #cccccc; background: #fff; }
 .row { display: grid; grid-template-columns: 2.5fr 1fr 1.5fr 1fr 80px; align-items: center; padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 12px; }
 .row:nth-child(even) { background-color: #f9f9f9; }
 .row:hover { background-color: #ffffee; }
 .row.header { background: #336699; color: #fff; font-weight: bold; }
+.row.group-header { background: #d1dce6; color: #336699; font-weight: bold; font-size: 13px; grid-template-columns: 1fr; border-top: 2px solid #99b3cc; }
 .row b { color: #0000ee; text-decoration: underline; cursor: pointer; font-size: 12px; }
 .empty { padding: 30px; text-align: center; color: #666; font-style: italic; }
 
-/* Cards e Estatísticas Simplificadas */
+/* Cards */
 .stats { display: flex; gap: 10px; margin-bottom: 20px; }
 .stat { border: 1px solid #ccc; padding: 10px; flex: 1; background: #f9f9f9; text-align: center; }
 .stat b { font-size: 18px; display: block; color: #336699; }
 .stat span { font-size: 10px; text-transform: uppercase; color: #555; }
-.stat .icon { display: none; }
 .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .category-card, .person-card { border: 1px solid #ccc; background: #f9f9f9; padding: 10px; text-align: center; cursor: pointer; }
 .category-card:hover, .person-card:hover { background: #e0e6eb; }
-.category-card .emoji { display: none; }
 .category-card b, .person-card b { font-size: 12px; color: #336699; text-decoration: underline; display: block;}
 .muted { color: #555; font-size: 10px; margin-top: 5px; }
 
-/* Modal / Formulário Formal */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: grid; place-items: center; z-index: 20; }
+/* Modais e Formulários */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: grid; place-items: center; z-index: 20; }
 .hidden { display: none; }
-.modal-card { background: #fff; border: 1px solid #999; width: 650px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); border-radius: 0; }
+.modal-card { background: #fff; border: 1px solid #999; width: 650px; box-shadow: 2px 2px 10px rgba(0,0,0,0.3); border-radius: 0; }
 .modal-head { background: #336699; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
 .modal-head h2 { margin: 0; font-size: 14px; font-weight: bold; }
 .close { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
@@ -70,21 +71,29 @@ input:focus, select:focus, textarea:focus { border-color: #336699; background: #
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 10px; }
 .filebox { border: 1px solid #ccc; background: #f5f5f5; padding: 10px; margin: 10px 0; }
 
+/* Ficha A4 para Visualização */
+.a4-sheet { background: #fff; padding: 40px; box-shadow: 0 0 5px rgba(0,0,0,0.1); font-family: 'Times New Roman', Times, serif; color: #000; min-height: 500px; }
+.a4-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
+.a4-header img { width: 60px; margin-bottom: 10px; }
+.a4-title { font-size: 18px; font-weight: bold; text-transform: uppercase; }
+.a4-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 14px; }
+.a4-field { border-bottom: 1px dotted #ccc; padding-bottom: 5px; }
+.a4-field span { font-weight: bold; font-size: 12px; color: #555; display: block; text-transform: uppercase; margin-bottom: 3px; }
+.a4-full { grid-column: 1 / -1; }
+.a4-content-box { border: 1px solid #000; padding: 15px; background: #fafafa; margin-top: 20px; font-size: 14px; white-space: pre-wrap; }
+
+/* --- REGRAS DE IMPRESSÃO E PDF NATIVO --- */
+#printArea { display: none; }
+@media print {
+  body { background: #fff; }
+  .app, .modal, .modal-card, .topbar, .sidebar { display: none !important; }
+  #printArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
+  .a4-sheet { box-shadow: none; padding: 0; width: 100%; border: none; }
+}
+
 /* Responsividade Básica */
 @media(max-width:900px){
   .sidebar { width: 180px; }
   .main { margin-left: 180px; width: calc(100% - 180px); }
   .cards, .stats { grid-template-columns: repeat(2, 1fr); }
-}
-@media(max-width:650px){
-  .sidebar { display: none; }
-  .main { margin: 0; width: 100%; }
-  .topbar { padding: 10px; height: auto; flex-wrap: wrap; }
-  .mobile-title { display: block; font-weight: bold; width: 100%; margin-bottom: 10px; }
-  .search { width: 100%; order: 2; margin-bottom: 10px; }
-  .search input { width: 100%; }
-  .topbar .primary { order: 3; width: 100%; }
-  .row { grid-template-columns: 1fr 80px; }
-  .row > *:nth-child(2), .row > *:nth-child(3), .row > *:nth-child(4) { display: none; }
-  .form-grid, .cards, .stats { grid-template-columns: 1fr; }
 }
